@@ -1,53 +1,25 @@
-// Параллельные вычисления
-function parallel(functions, callback) {
-  const results = {};
-  // Количество функций в очереди
-  const toResolveAmount = functions.length;
-  // Количество разрешённых
-  let toResolveCompleted = 0;
+function parallel(tasks = [], callback) {
+  let checkInterval = null;
+  const result = [];
 
-  const resolve = (index) => {
-    return function resolver(result) {
-      // setTimeout чтобы тяжеловестные операции выполнились асинхронно (параллельно!)
-      setTimeout(() => {
-        const resolved = true;
+  for (const i in tasks) {
+    const task = tasks[i];
 
-        while (true) {
-          if (typeof result !== 'undefined') {
-            // Записываем результат в очередь
-            results[index] = result;
-            toResolveCompleted++;
-
-            if (toResolveCompleted === toResolveAmount) {
-              callback(prepareResult(results));
-            }
-
-            break;
-          }
-        }
-      }, 0);
-    };
-  };
-
-  for (const i in functions) {
-    // Если функция асинхронная, то она вернёт undefined
-    const immidiateResult = functions[i](resolve(i));
-
-    if (typeof immidiateResult !== 'undefined') {
-      results[i] = immidiateResult;
-      toResolveCompleted++;
+    if (task.length) {
+      task((value) => result.splice(i, 0, value));
+      continue;
     }
-  }
-}
 
-function prepareResult(resultsObj) {
-  const results = [];
-
-  for (const result in resultsObj) {
-    results.push(resultsObj[result]);
+    result.splice(i, 0, task());
   }
 
-  return results;
+  checkInterval = setInterval(() => {
+    if (result.length === tasks.length) {
+      clearInterval(checkInterval);
+
+      return callback(result);
+    }
+  }, 0);
 }
 
 parallel(
@@ -55,7 +27,7 @@ parallel(
     function (resolve) {
       setTimeout(function () {
         resolve(10);
-      }, 1000);
+      }, 50);
     },
     function () {
       return 5;
@@ -63,7 +35,7 @@ parallel(
     function (resolve) {
       setTimeout(function () {
         resolve(0);
-      }, 2000);
+      }, 10);
     },
   ],
   function (results) {

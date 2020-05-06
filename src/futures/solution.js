@@ -2,23 +2,10 @@
 
 function Futures(executor) {
   this._executor = executor;
-
-  this._onSuccess = function (data) {
-    this._onSuccessFunction(data);
-  };
-
-  this._onError = function (data) {
-    if (typeof this._onErrorFunction === 'function') {
-      this._onErrorFunction(data);
-    }
-  };
 }
 
 Futures.prototype.then = function (onSuccess, onError) {
-  this._onSuccessFunction = onSuccess;
-  this._onErrorFunction = onError;
-
-  this._executor(this._onSuccess.bind(this), this._onError.bind(this));
+  return this._executor(onSuccess, onError);
 };
 
 // Тест #1
